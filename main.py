@@ -1,4 +1,5 @@
 import socket
+from scapy.all import *
 print("""
       :::::::::       ::::::::       :::::::::   :::::::::::       ::::::::       ::::::::           :::        ::::    :::
      :+:    :+:     :+:    :+:      :+:    :+:      :+:          :+:    :+:     :+:    :+:        :+: :+:      :+:+:   :+:
@@ -8,34 +9,42 @@ print("""
  #+#            #+#    #+#      #+#    #+#      #+#          #+#    #+#     #+#    #+#      #+#     #+#    #+#   #+#+#
 ###             ########       ###    ###      ###           ########       ########       ###     ###    ###    ####
 \ncredit by BELAYA_VORONA\n\n """)
-vibor = int(input("[>]введите выбор 1 или 2\n\n[1]-проверка 1 порта\n\n[2]-проверка нескольких\n\n[>]portscanner:"))
+vibor = int(input("[>]введите выбор 1 или 2\n\n[1]-SYN scan\n\n[2]-FULL TCP CONNECT SCAN\n\n[>]portscanner:"))
 
-def scan_port(ip,ports):
+
+def SYN_check_port(ip,port):
+        rep = sr1(IP(dst=ip)/TCP(dport=port , flags="S"),timeout=2, verbose=0)
+
+        if not rep:
+                print(f"[-]Port:{port} filtred/host down")
+                return
+        if rep.haslayer(TCP):
+                tcp = rep.getlayer(TCP)
+
+                if tcp.flags == 0x12:
+                        print(f"[+]port:{port} OPEN")
+                        send(IP(dst=ip) / TCP(dport=port , flags="R"), verbose=0)
+
+                #elif tcp.flags == 0x14:
+                        #print(f"[-]port:{port} CLOSED")
+        else:
+                print(f"Port:{port}UNKNOWN")
+
+def scan_port(ip,port):
 	try:
 		s = socket.socket()
-		s.connect((ip,ports))
-		print(f"[+] OPEN {ports}")
-	except: 
-		print(f"[-] BLOCK {ports}")
-
-def for_multi_scan_port(ip,ports):
-        try:
-                s = socket.socket()
-                s.connect((ip,ports))
-                print(f"[+] OPEN {ports}")
-        except: 
-                pass
+		s.connect((ip,port))
+		print(f"[+] OPEN {port}")
+	except:
+		pass
 
 
-def multi_scan_port(ip,ports):
-	for i in range(0,ports + 1):
-		for_multi_scan_port(ip, i)
 if __name__ == "__main__":
 	if vibor == 1:
 		ip = input("[>]введите ip:")
-		ports = int(input("[>]введите port:"))
-		scan_port(ip, ports)
+		for port in range(65536):
+			SYN_check_port(ip,port)
 	elif vibor == 2:
 		ip = input("[>]введите ip:")
-		ports = int(input("[>]введите ports:"))
-		multi_scan_port(ip, ports)
+		for port in range(65536):
+                        scan_port(ip,port)
